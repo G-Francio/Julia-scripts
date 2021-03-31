@@ -520,7 +520,7 @@ module fitsIO
     la bisezione, k l'ordine dello spline, user_max_mag è necessario nel caso si debba
     settare a mano la magnitudine massima, offset serve per dare un offset se necessario.
     """
-    function mag_lim(l; target = .34, y = 1, bs_ = 0.05, s = 0, tol = 1e-7, k = 3, user_max_mag = nothing, offset = 0, mult = 2.355, user_sigma = nothing)
+    function mag_lim_temp(l; target = .34, y = 1, bs_ = 0.05, s = 0, tol = 1e-7, k = 3, user_max_mag = nothing, offset = 0, mult = 2.355, user_sigma = nothing)
         si = 0.01 # sampling interval
 
         if iszero(s)
@@ -1105,14 +1105,14 @@ module fitsIO
 
     # ------------------------------ ** ------------------------------ #
 
-    function sedplotGALEX(skym1::DataFrameRow; z_est=nothing, z_spec=nothing, path::String="SED")
+    function sedplotMagLim(_skym1::DataFrameRow; z_est=nothing, z_spec=nothing, path::String="SED")
         function wise_vega2AB()
             [2.699, 3.339, 5.174, 6.620]
         end
-
+    
         function addflux(skym::DataFrame)
-            flux = DataFrame(object_id=skym.object_id)
-
+            _flux = DataFrame(object_id=skym.object_id)
+    
             # http://wise2.ipac.caltech.edu/docs/release/allsky/expsup/sec4_4h.html#conv2ab
             wise_f0 = [309.540, 171.787, 31.674, 8.363]
             # Restore Vega magnitudes
@@ -1121,62 +1121,76 @@ module fitsIO
             w2mpro = skym.w2mpro .- wise_dm[2]
             w3mpro = skym.w3mpro .- wise_dm[3]
             w4mpro = skym.w4mpro .- wise_dm[4]
-
-            flux[!,:w1]     = wise_f0[1] .* 10 .^( -w1mpro ./ 2.5)
-            flux[!,:w2]     = wise_f0[2] .* 10 .^( -w2mpro ./ 2.5)
-            flux[!,:w3]     = wise_f0[3] .* 10 .^( -w3mpro ./ 2.5)
-            flux[!,:w4]     = wise_f0[4] .* 10 .^( -w4mpro ./ 2.5)
-            flux[!,:err_w1] = wise_f0[1] .* 10 .^(-(w1mpro.-skym.w1sigmpro) ./ 2.5) .- flux[:,:w1]
-            flux[!,:err_w2] = wise_f0[2] .* 10 .^(-(w2mpro.-skym.w2sigmpro) ./ 2.5) .- flux[:,:w2]
-            flux[!,:err_w3] = wise_f0[3] .* 10 .^(-(w3mpro.-skym.w3sigmpro) ./ 2.5) .- flux[:,:w3]
-            flux[!,:err_w4] = wise_f0[4] .* 10 .^(-(w4mpro.-skym.w4sigmpro) ./ 2.5) .- flux[:,:w4]
-
+    
+            _flux[!,:w1]     = wise_f0[1] .* 10 .^( -w1mpro ./ 2.5)
+            _flux[!,:w2]     = wise_f0[2] .* 10 .^( -w2mpro ./ 2.5)
+            _flux[!,:w3]     = wise_f0[3] .* 10 .^( -w3mpro ./ 2.5)
+            _flux[!,:w4]     = wise_f0[4] .* 10 .^( -w4mpro ./ 2.5)
+            _flux[!,:err_w1] = wise_f0[1] .* 10 .^(-(w1mpro.-skym.w1sigmpro) ./ 2.5) .- _flux[:,:w1]
+            _flux[!,:err_w2] = wise_f0[2] .* 10 .^(-(w2mpro.-skym.w2sigmpro) ./ 2.5) .- _flux[:,:w2]
+            _flux[!,:err_w3] = wise_f0[3] .* 10 .^(-(w3mpro.-skym.w3sigmpro) ./ 2.5) .- _flux[:,:w3]
+            _flux[!,:err_w4] = wise_f0[4] .* 10 .^(-(w4mpro.-skym.w4sigmpro) ./ 2.5) .- _flux[:,:w4]
+    
             # https://old.ipac.caltech.edu/2mass/releases/allsky/doc/sec6_4a.html
             twomass_f0 = [1594., 1024., 666.7]
-            flux[!,:J]     = twomass_f0[1] .* 10 .^( -skym.j_m ./ 2.5)
-            flux[!,:H]     = twomass_f0[2] .* 10 .^( -skym.h_m ./ 2.5)
-            flux[!,:K]     = twomass_f0[3] .* 10 .^( -skym.k_m ./ 2.5)
-            flux[!,:err_J] = twomass_f0[1] .* 10 .^(-(skym.j_m.-skym.j_cmsig) ./ 2.5) .- flux[:,:J]
-            flux[!,:err_H] = twomass_f0[2] .* 10 .^(-(skym.h_m.-skym.h_cmsig) ./ 2.5) .- flux[:,:H]
-            flux[!,:err_K] = twomass_f0[3] .* 10 .^(-(skym.k_m.-skym.k_cmsig) ./ 2.5) .- flux[:,:K]
-
+            _flux[!,:J]     = twomass_f0[1] .* 10 .^( -skym.j_m ./ 2.5)
+            _flux[!,:H]     = twomass_f0[2] .* 10 .^( -skym.h_m ./ 2.5)
+            _flux[!,:K]     = twomass_f0[3] .* 10 .^( -skym.k_m ./ 2.5)
+            _flux[!,:err_J] = twomass_f0[1] .* 10 .^(-(skym.j_m.-skym.j_cmsig) ./ 2.5) .- _flux[:,:J]
+            _flux[!,:err_H] = twomass_f0[2] .* 10 .^(-(skym.h_m.-skym.h_cmsig) ./ 2.5) .- _flux[:,:H]
+            _flux[!,:err_K] = twomass_f0[3] .* 10 .^(-(skym.k_m.-skym.k_cmsig) ./ 2.5) .- _flux[:,:K]
+    
             # http://skymapper.anu.edu.au/data-release/dr1/#Filters
             AB_f0 = 3631.
-            flux[!,:u]     = AB_f0[1] .* 10 .^( -skym.u_psf ./ 2.5)
-            flux[!,:v]     = AB_f0[1] .* 10 .^( -skym.v_psf ./ 2.5)
-            flux[!,:g]     = AB_f0[1] .* 10 .^( -skym.g_psf ./ 2.5)
-            flux[!,:r]     = AB_f0[1] .* 10 .^( -skym.r_psf ./ 2.5)
-            flux[!,:i]     = AB_f0[1] .* 10 .^( -skym.i_psf ./ 2.5)
-            flux[!,:z]     = AB_f0[1] .* 10 .^( -skym.z_psf ./ 2.5)
-            flux[!,:err_u] = AB_f0[1] .* 10 .^(-(skym.u_psf.-skym.e_u_psf) ./ 2.5) .- flux[:,:u]
-            flux[!,:err_v] = AB_f0[1] .* 10 .^(-(skym.v_psf.-skym.e_v_psf) ./ 2.5) .- flux[:,:v]
-            flux[!,:err_g] = AB_f0[1] .* 10 .^(-(skym.g_psf.-skym.e_g_psf) ./ 2.5) .- flux[:,:g]
-            flux[!,:err_r] = AB_f0[1] .* 10 .^(-(skym.r_psf.-skym.e_r_psf) ./ 2.5) .- flux[:,:r]
-            flux[!,:err_i] = AB_f0[1] .* 10 .^(-(skym.i_psf.-skym.e_i_psf) ./ 2.5) .- flux[:,:i]
-            flux[!,:err_z] = AB_f0[1] .* 10 .^(-(skym.z_psf.-skym.e_z_psf) ./ 2.5) .- flux[:,:z]
-
-            # https://asd.gsfc.nasa.gov/archive/galex/FAQ/counts_background.html
-            # https://galex.stsci.edu/GR6/?page=faq
-            # A tutti gli effetti calcolato a mano e facendo il controllo su una sorgente a caso.
-            GALEX_f0 = [3800., 3625.]
-            flux[!,:nuv]     = GALEX_f0[1] .* 10 .^( -skym.nuv_mag ./ 2.5)
-            flux[!,:fuv]     = GALEX_f0[2] .* 10 .^( -skym.fuv_mag ./ 2.5)
-            flux[!,:err_nuv] = GALEX_f0[1] .* 10 .^(-(skym.nuv_mag.-skym.nuv_magerr) ./ 2.5) .- flux[:, :nuv]
-            flux[!,:err_fuv] = GALEX_f0[2] .* 10 .^(-(skym.nuv_mag.-skym.fuv_magerr) ./ 2.5) .- flux[:, :fuv]
+            _flux[!,:u]     = AB_f0[1] .* 10 .^( -skym.u_psf ./ 2.5)
+            _flux[!,:v]     = AB_f0[1] .* 10 .^( -skym.v_psf ./ 2.5)
+            _flux[!,:g]     = AB_f0[1] .* 10 .^( -skym.g_psf ./ 2.5)
+            _flux[!,:r]     = AB_f0[1] .* 10 .^( -skym.r_psf ./ 2.5)
+            _flux[!,:i]     = AB_f0[1] .* 10 .^( -skym.i_psf ./ 2.5)
+            _flux[!,:z]     = AB_f0[1] .* 10 .^( -skym.z_psf ./ 2.5)
+            _flux[!,:err_u] = AB_f0[1] .* 10 .^(-(skym.u_psf.-skym.e_u_psf) ./ 2.5) .- _flux[:,:u]
+            _flux[!,:err_v] = AB_f0[1] .* 10 .^(-(skym.v_psf.-skym.e_v_psf) ./ 2.5) .- _flux[:,:v]
+            _flux[!,:err_g] = AB_f0[1] .* 10 .^(-(skym.g_psf.-skym.e_g_psf) ./ 2.5) .- _flux[:,:g]
+            _flux[!,:err_r] = AB_f0[1] .* 10 .^(-(skym.r_psf.-skym.e_r_psf) ./ 2.5) .- _flux[:,:r]
+            _flux[!,:err_i] = AB_f0[1] .* 10 .^(-(skym.i_psf.-skym.e_i_psf) ./ 2.5) .- _flux[:,:i]
+            _flux[!,:err_z] = AB_f0[1] .* 10 .^(-(skym.z_psf.-skym.e_z_psf) ./ 2.5) .- _flux[:,:z]
             
-            return flux[1,:]
+            return _flux[1,:]
         end
-
-        flux = addflux(DataFrame(skym1))
+    
+        m = [:u_psf,   :v_psf,   :g_psf,   :r_psf,   :i_psf,   :z_psf,   :h_m,     :j_m,     :k_m,     :w1mpro,    :w2mpro,    :w3mpro,    :w4mpro]
+        e = [:e_u_psf, :e_v_psf, :e_g_psf, :e_r_psf, :e_i_psf, :e_z_psf, :h_cmsig, :j_cmsig, :k_cmsig, :w1sigmpro, :w2sigmpro, :w3sigmpro, :w4sigmpro]
+    
+        skym1  = deepcopy(_skym1)
+        skym1_ = deepcopy(_skym1)
+    
+        for (_m, _e) in zip(m, e)
+            if _skym1[_e] > 5
+                skym1[_e]  = NaN
+                skym1_[_e] = NaN
+            else
+                skym1_[_m] = NaN
+                skym1_[_e] = NaN
+            end
+        end
+    
+        flux       = addflux(DataFrame(skym1))
+        fluxLimMag = addflux(DataFrame(skym1_))
+    
         file = "$(path)/" * string(skym1[:object_id]) * ".png"
         #isfile(file)  &&  return nothing
-        w = [    1500,     2300,   3500,   3800,   5200,   6200,   7600,   9000, 12_500, 16_500, 21_500, 34_350,  46_000,  115_600, 220_800]
-        m = [    :fuv,     :nuv,     :u,     :v,     :g,     :r,     :i,     :z,     :J,     :H,     :K,     :w1,     :w2,     :w3,     :w4]
-        e = [:err_fuv, :err_nuv, :err_u, :err_v, :err_g, :err_r, :err_i, :err_z, :err_J, :err_H, :err_K, :err_w1, :err_w2, :err_w3, :err_w4]
-        l = [   "fUV",    "nUV",    "u",    "v",    "g",    "r",    "i",    "z",    "J",    "H",    "K",    "W1",    "W2",    "W3",    "W4"]
+        w = [  3500,   3800,   5200,   6200,   7600,   9000, 12_500, 16_500, 21_500,  34_350,  46_000, 115_600, 220_800]
+        m = [    :u,     :v,     :g,     :r,     :i,     :z,     :J,     :H,     :K,     :w1,     :w2,     :w3,     :w4]
+        e = [:err_u, :err_v, :err_g, :err_r, :err_i, :err_z, :err_J, :err_H, :err_K, :err_w1, :err_w2, :err_w3, :err_w4]
+        l = [    "u",    "v",    "g",    "r",    "i",    "z",    "J",    "H",    "K",    "W1",    "W2",    "W3",    "W4"]
         f = 3e18 ./ w
+    
         mm = collect(flux[m]);  mm .*= 1e-10 .* f;
         ee = collect(flux[e]);  ee .*= 1e-10 .* f;
+    
+        mm_ = collect(fluxLimMag[m]);  mm_ .*= 1e-10 .* f;
+        ee_ = collect(fluxLimMag[e]);  ee_ .*= 1e-10 .* f;
+    
         tmp = [mm.-ee mm.+ee]
         tmp = tmp[findall(.!isnan.(tmp))]
         yr = [extrema(tmp)...] .* [0.5, 2]
@@ -1186,6 +1200,7 @@ module fitsIO
         isnothing(z_est)   ||  (tit *= ", z_{est}="  *string(round(z_est *100)/100))
         isnothing(z_spec)  ||  (tit *= ", z_{spec}=" *string(round(z_spec*100)/100))
         @gp :- :sed title=tit
+        println(2)
         for i in 1:length(l)
             @gp :- :sed "set label '" * l[i] * "' at first " * string(f[i]) * ", first  " * string(mm[i]) * " offset character 0.5, -0.5" :-
         end
@@ -1197,9 +1212,9 @@ module fitsIO
             @gp :- :sed n .* [1,1] [0.1, 1000]  "w l notit dt 3 lc rgb 'grey'"
             @gp :- :sed "set label '1{/Symbol m}m at z=" * string(z) * "' textcolor 'grey' at first " * string(n) * ", screen 0.14 rotate by 90 offset character -1,0" :-
         end
-        @gp :- :sed f mm ee "w yerr notit pt 7 lc rgb 'red'"
+        @gp :- :sed f mm  ee  "w yerr notit pt 7 lc rgb 'red'"
+        @gp :- :sed f mm_ ee_ "w yerr notit pt 7 lc rgb 'blue'"
         save(:sed, term="pngcairo enhanced size 750,500", output=file)
         save(:sed, file*".gp")
     end
-
 end
