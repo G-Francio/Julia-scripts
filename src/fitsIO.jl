@@ -328,7 +328,7 @@ module fitsIO
         end
 
         open(file_out, "w") do f
-            pretty_table(f, table; tf = markdown)
+            pretty_table(f, table; tf = tf_markdown)
         end
     end
 
@@ -1200,7 +1200,7 @@ module fitsIO
         isnothing(z_est)   ||  (tit *= ", z_{est}="  *string(round(z_est *100)/100))
         isnothing(z_spec)  ||  (tit *= ", z_{spec}=" *string(round(z_spec*100)/100))
         @gp :- :sed title=tit
-        println(2)
+
         for i in 1:length(l)
             @gp :- :sed "set label '" * l[i] * "' at first " * string(f[i]) * ", first  " * string(mm[i]) * " offset character 0.5, -0.5" :-
         end
