@@ -520,31 +520,37 @@ module fitsIO
     la bisezione, k l'ordine dello spline, user_max_mag è necessario nel caso si debba
     settare a mano la magnitudine massima, offset serve per dare un offset se necessario.
     """
-    function mag_lim_temp(l; target = .34, y = 1, bs_ = 0.05, s = 0, tol = 1e-7, k = 3, user_max_mag = nothing, offset = 0, mult = 2.355, user_sigma = nothing)
-        si = 0.01 # sampling interval
+    function mag_lim(l; target = .34, y = 1, bs_ = 0.05, s = 0, tol = 1e-7, k = 3, user_offset = 0, user_max_mag = nothing, user_sigma = nothing)
+        spline_is_zero = 0
+        si             = 0.01
+        # ^ sampling interval
+
+        function check_spline(x)
+            if x >= 0
+                return x
+            else
+                return 0
+            end
+        end
 
         if iszero(s)
             s = length(l)
         end
 
-        spline_is_zero = 0
-
-        check_spline(x) = x >= 0 ? x : 0
-
         h = hist(l, bs = bs_)
 
-        spl = Spline1D(h.bins, h.counts; s = s, k = k)
-        point_list = h.bins[1]:si:h.bins[end]
+        spl           = Spline1D(h.bins, h.counts; s = s, k = k)
+        point_list    = h.bins[1]:si:h.bins[end]
         spline_points = check_spline.(spl(point_list))
 
-        max_id = findall(spline_points .== maximum(spline_points))[1]
+        max_id  = argmax(spline_points)
         max_mag = point_list[max_id]
 
         if !isnothing(user_max_mag)
             max_mag = user_max_mag
         end
 
-        int_x = findall(point_list .> max_mag)
+        int_x      = findall(point_list .> max_mag)
         int_approx = sum(spline_points[int_x])*si
 
         int = 0
@@ -571,31 +577,25 @@ module fitsIO
         end
 
         gauss(x, m, s) = 1/(sqrt(2*3.1415)*s) * exp(-((x - m)/s)^2/2) * (2*sum(new_counts))*si
-        gauss_x = 10:si:30
+        gauss_x = 10:si:25
 
         if !isnothing(user_sigma)
             sigma = user_sigma
         end
 
-        gauss_points = gauss.(gauss_x, max_mag, sigma)
-        gauss_points_reverse = maximum(gauss_points) .- gauss.(gauss_x, max_mag + mult*sigma, sigma)
-
-        var = max_mag + mult*sigma
-        y_var = 0.01
+        gauss_points         = gauss.(gauss_x, max_mag, sigma)
 
         if y == 1
             @gp "set style fill solid 0.4"
             @gp :- "set key left box"
-            @gp :- h.bins h.counts "w boxes lc 'grey60' t 'Distribuzione per skymapper g'"
+            @gp :- h.bins h.counts "w boxes lc 'grey60' t 'Distribuzione per banda'"
             @gp :- max_mag spline_points[max_id] "pt 7 ps 0.7 lc 'red' lw 0.1 t 'Massimo della distribuzione'"
-            @gp :- var y_var "pt 7 ps 0.7 lc 'blue' lw 0.1 t 'Magnitudine limite'"
             @gp :- point_list spline_points "w l lc 'red' dashtype 2 t 'Spline polinomiale'"
             @gp :- gauss_x gauss_points "w l lc 'black' notitle"
-            @gp :- gauss_x gauss_points_reverse "w l lc 'blue' notitle"
-            save(term="pngcairo size 720, 420 fontscale 0.8", output = "output.png")
+            save(term = "pngcairo size 720, 420 fontscale 0.8", output = "output.png")
         end
 
-        return max_mag + offset, sigma, max_mag + mult*sigma + offset
+        return max_mag + user_offset, sigma
     end
 
     # ------------------------------ ** ------------------------------ #
