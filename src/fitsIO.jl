@@ -1154,12 +1154,35 @@ module fitsIO
             _flux[!,:err_r] = AB_f0[1] .* 10 .^(-(skym.r_psf.-skym.e_r_psf) ./ 2.5) .- _flux[:,:r]
             _flux[!,:err_i] = AB_f0[1] .* 10 .^(-(skym.i_psf.-skym.e_i_psf) ./ 2.5) .- _flux[:,:i]
             _flux[!,:err_z] = AB_f0[1] .* 10 .^(-(skym.z_psf.-skym.e_z_psf) ./ 2.5) .- _flux[:,:z]
+
+
+            # https://www.cosmos.esa.int/web/gaia/edr3-passbands
+            # Nota bene: nel DB ci sono le magnitudini della DR3, ma qualitativamente non ci saranno differenze.
+            # Quindi, detto in altri termini, fuffa e chissene :D
+            # I numeri qui sotto (e nel resto) si riferiscono quindi alla DR2.
+            # gaia_f0    = [25.6873668671, 25.3385422158, 24.7478955012]
+            # gaia_f0_AB = [25.8010446445, 25.3539555559, 25.1039837393]
+
+            gaia_f0    = [25.6884, 25.3514, 24.7619]
+            gaia_f0_AB = [25.7934, 25.3806, 25.1161]
+        
+            flux_G          = 10 .^( -(skym.gaia_G  .- gaia_f0[1]) ./ 2.5)
+            flux_BP         = 10 .^( -(skym.gaia_BP .- gaia_f0[2]) ./ 2.5)
+            flux_RP         = 10 .^( -(skym.gaia_RP .- gaia_f0[3]) ./ 2.5)
+            
+            _flux[!,:G]      = [flux_G  * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[1])) * 1e26]
+            _flux[!,:BP]     = [flux_BP * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[2])) * 1e26]
+            _flux[!,:RP]     = [flux_RP * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[3])) * 1e26]
+        
+            _flux[!,:err_G]  =  flux[!,:G]  * log10(10) / 2.5 * skym.gaia_G_err
+            _flux[!,:err_BP] =  flux[!,:BP] * log10(10) / 2.5 * skym.gaia_BP_err
+            _flux[!,:err_RP] =  flux[!,:RP] * log10(10) / 2.5 * skym.gaia_RP_err
             
             return _flux[1,:]
         end
     
-        m = [:u_psf,   :v_psf,   :g_psf,   :r_psf,   :i_psf,   :z_psf,   :h_m,     :j_m,     :k_m,     :w1mpro,    :w2mpro,    :w3mpro,    :w4mpro]
-        e = [:e_u_psf, :e_v_psf, :e_g_psf, :e_r_psf, :e_i_psf, :e_z_psf, :h_cmsig, :j_cmsig, :k_cmsig, :w1sigmpro, :w2sigmpro, :w3sigmpro, :w4sigmpro]
+        m = [:u_psf,   :v_psf,   :g_psf,   :r_psf,   :i_psf,   :z_psf,   :h_m,     :j_m,     :k_m,     :w1mpro,    :w2mpro,    :w3mpro,    :w4mpro,    :G,     :BP,     :RP]
+        e = [:e_u_psf, :e_v_psf, :e_g_psf, :e_r_psf, :e_i_psf, :e_z_psf, :h_cmsig, :j_cmsig, :k_cmsig, :w1sigmpro, :w2sigmpro, :w3sigmpro, :w4sigmpro, :err_G, :err_BP, :err_RP]
     
         skym1  = deepcopy(_skym1)
         skym1_ = deepcopy(_skym1)
@@ -1179,10 +1202,10 @@ module fitsIO
     
         file = "$(path)/" * string(skym1[:object_id]) * ".png"
         #isfile(file)  &&  return nothing
-        w = [  3500,   3800,   5200,   6200,   7600,   9000, 12_500, 16_500, 21_500,  34_350,  46_000, 115_600, 220_800]
-        m = [    :u,     :v,     :g,     :r,     :i,     :z,     :J,     :H,     :K,     :w1,     :w2,     :w3,     :w4]
-        e = [:err_u, :err_v, :err_g, :err_r, :err_i, :err_z, :err_J, :err_H, :err_K, :err_w1, :err_w2, :err_w3, :err_w4]
-        l = [    "u",    "v",    "g",    "r",    "i",    "z",    "J",    "H",    "K",    "W1",    "W2",    "W3",    "W4"]
+        w = [  3500,   3800,   5200,   6200,   7600,   9000, 12_500, 16_500, 21_500,  34_350,  46_000, 115_600, 220_800,   5800,    5050,    7600]
+        m = [    :u,     :v,     :g,     :r,     :i,     :z,     :J,     :H,     :K,     :w1,     :w2,     :w3,     :w4,     :G,     :BP,     :RP]
+        e = [:err_u, :err_v, :err_g, :err_r, :err_i, :err_z, :err_J, :err_H, :err_K, :err_w1, :err_w2, :err_w3, :err_w4, :err_G, :err_BP, :err_RP]
+        l = [    "u",    "v",    "g",    "r",    "i",    "z",    "J",    "H",    "K",   "W1",     "W2",    "W3",    "W4",    "G",    "BP",    "RP"]
         f = 3e18 ./ w
     
         mm = collect(flux[m]);  mm .*= 1e-10 .* f;
