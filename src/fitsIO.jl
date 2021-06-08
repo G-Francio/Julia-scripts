@@ -1166,23 +1166,23 @@ module fitsIO
             gaia_f0    = [25.6884, 25.3514, 24.7619]
             gaia_f0_AB = [25.7934, 25.3806, 25.1161]
         
-            flux_G          = 10 .^( -(skym.gaia_G  .- gaia_f0[1]) ./ 2.5)
-            flux_BP         = 10 .^( -(skym.gaia_BP .- gaia_f0[2]) ./ 2.5)
-            flux_RP         = 10 .^( -(skym.gaia_RP .- gaia_f0[3]) ./ 2.5)
+            flux_G          = 10 .^( -(skym.phot_g_mean_mag  .- gaia_f0[1]) ./ 2.5)
+            flux_BP         = 10 .^( -(skym.phot_bp_mean_mag .- gaia_f0[2]) ./ 2.5)
+            flux_RP         = 10 .^( -(skym.phot_rp_mean_mag .- gaia_f0[3]) ./ 2.5)
             
             _flux[!,:G]      = [flux_G  * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[1])) * 1e26]
             _flux[!,:BP]     = [flux_BP * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[2])) * 1e26]
             _flux[!,:RP]     = [flux_RP * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[3])) * 1e26]
         
-            _flux[!,:err_G]  =  flux[!,:G]  * log10(10) / 2.5 * skym.gaia_G_err
-            _flux[!,:err_BP] =  flux[!,:BP] * log10(10) / 2.5 * skym.gaia_BP_err
-            _flux[!,:err_RP] =  flux[!,:RP] * log10(10) / 2.5 * skym.gaia_RP_err
+            _flux[!,:err_G]  =  flux[!,:G]  * log10(10) / 2.5 * skym.phot_g_mean_mag_error
+            _flux[!,:err_BP] =  flux[!,:BP] * log10(10) / 2.5 * skym.phot_bp_mean_mag_error
+            _flux[!,:err_RP] =  flux[!,:RP] * log10(10) / 2.5 * skym.phot_rp_mean_mag_error
             
             return _flux[1,:]
         end
     
-        m = [:u_psf,   :v_psf,   :g_psf,   :r_psf,   :i_psf,   :z_psf,   :h_m,     :j_m,     :k_m,     :w1mpro,    :w2mpro,    :w3mpro,    :w4mpro,    :G,     :BP,     :RP]
-        e = [:e_u_psf, :e_v_psf, :e_g_psf, :e_r_psf, :e_i_psf, :e_z_psf, :h_cmsig, :j_cmsig, :k_cmsig, :w1sigmpro, :w2sigmpro, :w3sigmpro, :w4sigmpro, :err_G, :err_BP, :err_RP]
+        m = [:u_psf,   :v_psf,   :g_psf,   :r_psf,   :i_psf,   :z_psf,   :h_m,     :j_m,     :k_m,     :w1mpro,    :w2mpro,    :w3mpro,    :w4mpro,    :phot_g_mean_mag,       :phot_bp_mean_mag,       :phot_rp_mean_mag]
+        e = [:e_u_psf, :e_v_psf, :e_g_psf, :e_r_psf, :e_i_psf, :e_z_psf, :h_cmsig, :j_cmsig, :k_cmsig, :w1sigmpro, :w2sigmpro, :w3sigmpro, :w4sigmpro, :phot_g_mean_mag_error, :phot_bp_mean_mag_error, :phot_rp_mean_mag_error]
     
         skym1  = deepcopy(_skym1)
         skym1_ = deepcopy(_skym1)
