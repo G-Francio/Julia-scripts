@@ -1174,9 +1174,9 @@ module fitsIO
             _flux[!,:BP]     = [flux_BP * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[2])) * 1e26]
             _flux[!,:RP]     = [flux_RP * 10 ^ (-0.4 * (56.1 + gaia_f0_AB[3])) * 1e26]
         
-            _flux[!,:err_G]  =  flux[!,:G]  * log10(10) / 2.5 * skym.phot_g_mean_mag_error
-            _flux[!,:err_BP] =  flux[!,:BP] * log10(10) / 2.5 * skym.phot_bp_mean_mag_error
-            _flux[!,:err_RP] =  flux[!,:RP] * log10(10) / 2.5 * skym.phot_rp_mean_mag_error
+            _flux[!,:err_G]  =  _flux[!,:G]  * log10(10) / 2.5 * skym.phot_g_mean_mag_error
+            _flux[!,:err_BP] =  _flux[!,:BP] * log10(10) / 2.5 * skym.phot_bp_mean_mag_error
+            _flux[!,:err_RP] =  _flux[!,:RP] * log10(10) / 2.5 * skym.phot_rp_mean_mag_error
             
             return _flux[1,:]
         end
